@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Creating Real-Time Charts with Flask</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> 
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="canvas2" height="50"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+<script>
+    $(document).ready(function () {
+       
+        const config = {
+            type: 'line',
+            data: {
+                labels: Array(300),
+                datasets: [{
+                    label: "Ask Price",
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [],
+                    fill: false,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                },
+                {
+                    label: "MA",
+                    backgroundColor: 'rgba(102, 102, 102)',
+                    borderColor: 'rgba(102, 102, 102)',
+                    data: [],
+                    fill: false,
+                    borderDash: [10,5],
+                    pointRadius: 0,
+                    borderWidth: 1
+                },
+                // {
+                //     label: "Bid Price",
+                //     backgroundColor: 'rgba(2, 0, 69)',
+                //     borderColor: 'rgba(2, 0, 69)',
+                //     data: [],
+                //     fill: false,
+                //     pointRadius: 2,
+                //     borderWidth: 2
+                // }],
+            ]},
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'DOGE Price'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: false,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Price'
+                        }
+                    }]
+                }
+            }
+        };
+
+        const context = document.getElementById('canvas').getContext('2d');
+
+        // var gradientFill = context.createLinearGradient(0,0,0,290);
+        // gradientFill.addColorStop(0, "rgba(255, 99, 132, 1)");
+        // gradientFill.addColorStop(1, "rgba(255, 99, 132, .1)");
+
+        const lineChart = new Chart(context, config);
+
+        const source = new EventSource("/chart-data");
+
+        source.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (config.data.labels.length === 40) {
+                config.data.labels.shift();
+                config.data.datasets[0].data.shift();
+                config.data.datasets[1].data.shift();
+                // config.data.datasets[2].data.shift();
+            }
+            config.data.labels.push(data.time);
+            config.data.datasets[0].data.push(data.ask_price);
+            config.data.datasets[1].data.push(data.average);
+            // config.data.datasets[2].data.push(data.bid_price);
+            lineChart.update();
+        }
+
+    });
+
+</script>
+<script>
+    $(document).ready(function () {
+        const config2 = {
+            type: 'line',
+            data: {
+                labels: Array(840),
+                datasets: [{
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [],
+                    fill: false,
+                    borderWidth: 1,
+                    pointRadius: 0,
+                },
+
+                {
+                    backgroundColor: 'rgba(102, 102, 102)',
+                    borderColor: 'rgba(102, 102, 102)',
+                    data: [],
+                    fill: false,
+                    borderDash: [10,5],
+                    pointRadius: 0,
+                    borderWidth: 1
+                },
+            ]},
+            options: {
+                responsive: true,
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Trading Day'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                    }
+                        
+                    //     // scaleLabel: {
+                    //     //     display: true,
+                    //     //     labelString: 'Time'
+                    //     // }
+                    // }],
+                    ],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Price'
+                        }
+                    }]
+                }
+            }
+        };
+
+        const context2 = document.getElementById('canvas2').getContext('2d');
+
+        const lineChart2 = new Chart(context2, config2);
+
+        const source2 = new EventSource("/chart-data2");
+
+        source2.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            // if (config2.data.labels.length === 40) {
+            //     config2.data.labels.shift();
+            //     config2.data.datasets[0].data.shift();
+            //     config2.data.datasets[1].data.shift();
+            // }
+            // config2.data.labels.push(data.time);
+            config2.data.datasets[0].data.push(data.ask_price);
+            config2.data.datasets[1].data.push(data.average);
+            lineChart2.update();
+        }
+    });
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+</body>
+</html>
